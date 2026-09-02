@@ -1,0 +1,11 @@
+<p>
+  <label><%= l(:rinf_setting_enable_new_show) %></label>
+  <%= hidden_field_tag 'settings[enable_new_show]', '0' %>
+  <%= check_box_tag 'settings[enable_new_show]', '1', @settings['enable_new_show'].to_s == '1' %>
+</p>
+<p>
+  <label><%= l(:rinf_setting_groups_yaml) %></label>
+  <%= text_area_tag 'settings[groups_yaml]', @settings['groups_yaml'], rows: 14, cols: 80,
+        placeholder: l(:rinf_setting_groups_yaml_placeholder) %>
+</p>
+<em class="info"><%= l(:rinf_setting_groups_yaml_info) %></em>

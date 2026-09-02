@@ -1,0 +1,699 @@
+<title>Redmine: новая форма задачи — мок</title>
+<style>
+:root {
+  --ground: #F6F7F9;
+  --surface: #FFFFFF;
+  --surface-2: #EEF1F5;
+  --ink: #1D2635;
+  --ink-2: #4A566B;
+  --muted: #7C879C;
+  --line: #DDE2EA;
+  --line-soft: #E8ECF2;
+  --accent: #2F6FB2;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E3EDF8;
+  --good: #2E7D4F;
+  --good-soft: #E2F0E8;
+  --warn: #9A6E1B;
+  --warn-soft: #F6ECD7;
+  --bad: #B3403A;
+  --bad-soft: #F7E4E3;
+  --hook: #8A5FB0;
+  --hook-soft: #F1EAF8;
+  --shadow: 0 1px 2px rgba(29,38,53,.06), 0 4px 16px rgba(29,38,53,.05);
+  --mono: "SF Mono", ui-monospace, "Cascadia Mono", "Roboto Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #161A21;
+    --surface: #1E242E;
+    --surface-2: #262D39;
+    --ink: #E6EAF1;
+    --ink-2: #AAB4C5;
+    --muted: #77839A;
+    --line: #333C4B;
+    --line-soft: #2A3240;
+    --accent: #5E96D2;
+    --accent-ink: #10151D;
+    --accent-soft: #24344A;
+    --good: #5CAD82;
+    --good-soft: #21372C;
+    --warn: #CFA050;
+    --warn-soft: #3B3021;
+    --bad: #D4736D;
+    --bad-soft: #402525;
+    --hook: #AD87D6;
+    --hook-soft: #322940;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #161A21;
+  --surface: #1E242E;
+  --surface-2: #262D39;
+  --ink: #E6EAF1;
+  --ink-2: #AAB4C5;
+  --muted: #77839A;
+  --line: #333C4B;
+  --line-soft: #2A3240;
+  --accent: #5E96D2;
+  --accent-ink: #10151D;
+  --accent-soft: #24344A;
+  --good: #5CAD82;
+  --good-soft: #21372C;
+  --warn: #CFA050;
+  --warn-soft: #3B3021;
+  --bad: #D4736D;
+  --bad-soft: #402525;
+  --hook: #AD87D6;
+  --hook-soft: #322940;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+}
+:root[data-theme="light"] {
+  --ground: #F6F7F9;
+  --surface: #FFFFFF;
+  --surface-2: #EEF1F5;
+  --ink: #1D2635;
+  --ink-2: #4A566B;
+  --muted: #7C879C;
+  --line: #DDE2EA;
+  --line-soft: #E8ECF2;
+  --accent: #2F6FB2;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E3EDF8;
+  --good: #2E7D4F;
+  --good-soft: #E2F0E8;
+  --warn: #9A6E1B;
+  --warn-soft: #F6ECD7;
+  --bad: #B3403A;
+  --bad-soft: #F7E4E3;
+  --hook: #8A5FB0;
+  --hook-soft: #F1EAF8;
+  --shadow: 0 1px 2px rgba(29,38,53,.06), 0 4px 16px rgba(29,38,53,.05);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 10px 24px;
+  display: flex; align-items: center; gap: 16px;
+}
+.topbar .crumb { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.topbar .crumb a { color: var(--accent); text-decoration: none; }
+.topbar .crumb a:hover { text-decoration: underline; }
+.topbar .spacer { flex: 1; }
+.demo-controls { display: flex; gap: 14px; align-items: center; font-size: 12.5px; color: var(--ink-2); }
+.demo-controls label { display: flex; gap: 6px; align-items: center; cursor: pointer; white-space: nowrap; }
+.demo-controls .tag { background: var(--surface-2); border: 1px solid var(--line); border-radius: 4px; padding: 1px 8px; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+
+.wrap { max-width: 1360px; margin: 0 auto; padding: 20px 24px 64px; }
+
+.issue-head { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.head-row { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
+.issue-id { font-family: var(--mono); font-size: 13px; color: var(--muted); padding-top: 7px; white-space: nowrap; }
+h1.subject {
+  font-size: 22px; line-height: 1.3; font-weight: 650; margin: 0;
+  text-wrap: balance; flex: 1; min-width: 260px;
+}
+.head-actions { display: flex; gap: 8px; align-items: center; padding-top: 2px; }
+.btn {
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 6px; padding: 6px 14px; font-size: 13.5px; font-weight: 550; cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.07); color: var(--accent-ink); }
+.btn:focus-visible, .pill:focus-visible, .tab:focus-visible, a:focus-visible, .field:focus-visible, .toggle-empty:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.pill-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 20px; padding: 3px 12px; font-size: 12.5px; font-weight: 600;
+  border: 1px solid transparent; cursor: pointer; background: var(--surface-2); color: var(--ink-2);
+}
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.status { background: var(--accent-soft); color: var(--accent); }
+.pill.prio { background: var(--bad-soft); color: var(--bad); }
+.pill.private { background: var(--warn-soft); color: var(--warn); }
+.pill.ghost { background: transparent; border-color: var(--line); color: var(--muted); font-weight: 500; }
+.meta-line { color: var(--muted); font-size: 12.5px; }
+.meta-line a { color: var(--accent); text-decoration: none; }
+
+.progress-wrap { display: inline-flex; align-items: center; gap: 8px; }
+.progress { width: 120px; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.progress > i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.progress-num { font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--line-soft); border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.card + .card { margin-top: 16px; }
+.card-h {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 18px; border-bottom: 1px solid var(--line-soft);
+  font-size: 13px; font-weight: 650; letter-spacing: .02em;
+}
+.card-h .count { color: var(--muted); font-weight: 500; font-family: var(--mono); font-size: 12px; }
+.card-b { padding: 16px 18px; }
+.card-b p { margin: 0 0 10px; max-width: 68ch; }
+.card-b p:last-child { margin-bottom: 0; }
+
+.desc-quote { border-left: 3px solid var(--line); padding: 2px 0 2px 12px; color: var(--ink-2); margin: 10px 0; }
+.desc-code { font-family: var(--mono); font-size: 12.5px; background: var(--surface-2); border-radius: 6px; padding: 10px 12px; overflow-x: auto; }
+
+.attach-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.attach {
+  display: inline-flex; gap: 8px; align-items: center;
+  border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font-size: 12.5px; color: var(--ink-2);
+}
+.attach .ext { font-family: var(--mono); font-size: 10.5px; background: var(--surface-2); padding: 1px 5px; border-radius: 3px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+
+.subtable { width: 100%; border-collapse: collapse; font-size: 13px; }
+.subtable td { padding: 7px 10px; border-top: 1px solid var(--line-soft); }
+.subtable tr:first-child td { border-top: none; }
+.subtable .id { font-family: var(--mono); color: var(--muted); white-space: nowrap; }
+.subtable a { color: var(--accent); text-decoration: none; }
+.subtable .st { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: var(--good-soft); color: var(--good); white-space: nowrap; }
+.subtable .st.open { background: var(--accent-soft); color: var(--accent); }
+
+.tabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--line-soft); }
+.tab {
+  border: none; background: none; color: var(--muted); font-size: 13px; font-weight: 550;
+  padding: 11px 12px 9px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tab .n { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-left: 4px; }
+
+.journal { list-style: none; margin: 0; padding: 4px 0; }
+.journal > li { display: flex; gap: 12px; padding: 12px 18px; }
+.journal > li + li { border-top: 1px solid var(--line-soft); }
+.avatar {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700;
+}
+.avatar.alt { background: var(--warn-soft); color: var(--warn); }
+.j-body { flex: 1; min-width: 0; }
+.j-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.j-head .who { font-weight: 650; font-size: 13px; }
+.j-head .when { color: var(--muted); font-size: 12px; font-family: var(--mono); }
+.j-head .jn { margin-left: auto; color: var(--muted); font-size: 11.5px; font-family: var(--mono); }
+.j-note { margin: 6px 0 0; color: var(--ink-2); max-width: 70ch; }
+.j-props { margin: 6px 0 0; display: flex; flex-direction: column; gap: 3px; }
+.j-prop { font-size: 12.5px; color: var(--muted); }
+.j-prop b { color: var(--ink-2); font-weight: 600; }
+.j-prop .old { text-decoration: line-through; opacity: .7; }
+.j-prop .arr { padding: 0 4px; }
+.composer { border-top: 1px solid var(--line-soft); padding: 14px 18px; display: flex; gap: 12px; }
+.composer .box {
+  flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+  color: var(--muted); font-size: 13.5px; background: var(--ground);
+}
+
+.sidebar { display: flex; flex-direction: column; gap: 14px; }
+.group { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 10px; box-shadow: var(--shadow); }
+.group > summary {
+  list-style: none; cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2);
+}
+.group > summary::-webkit-details-marker { display: none; }
+.group > summary::before { content: "▸"; color: var(--muted); font-size: 10px; transition: transform .15s; }
+.group[open] > summary::before { transform: rotate(90deg); }
+.group > summary .count { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--muted); font-weight: 500; }
+.fields { padding: 2px 6px 8px; }
+.field {
+  display: grid; grid-template-columns: 132px 1fr; gap: 10px; align-items: baseline;
+  padding: 5px 10px; border-radius: 6px; cursor: pointer;
+}
+.field:hover { background: var(--surface-2); }
+.field:hover .fv::after { content: "✎"; color: var(--muted); font-size: 11px; margin-left: 6px; }
+.field .fl { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.field .fv { font-size: 13px; color: var(--ink); overflow-wrap: anywhere; }
+.field .fv a { color: var(--accent); text-decoration: none; }
+.field .fv .num, .fv.num { font-family: var(--mono); font-size: 12.5px; }
+.field.empty { display: none; }
+.field.empty .fv { color: var(--muted); }
+.show-empty .field.empty { display: grid; }
+.fv .chip-bad { color: var(--bad); background: var(--bad-soft); border-radius: 4px; padding: 1px 7px; font-family: var(--mono); font-size: 12px; font-weight: 600; }
+.toggle-empty {
+  margin: 2px 10px 8px; border: none; background: none; color: var(--accent);
+  font-size: 12px; cursor: pointer; padding: 2px 0;
+}
+.checklist { padding: 4px 10px 10px; display: flex; flex-direction: column; gap: 2px; }
+.check { display: flex; gap: 9px; align-items: center; padding: 4px 8px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+.check:hover { background: var(--surface-2); }
+.check .cbox {
+  width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--line); flex: none;
+  display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--accent-ink);
+}
+.check.on .cbox { background: var(--good); border-color: var(--good); }
+.check.on .cbox::after { content: "✓"; }
+.check .lbl { color: var(--ink-2); }
+.check.on .lbl { color: var(--ink); }
+
+.counters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 4px 12px 12px; }
+.counter { text-align: center; border: 1px solid var(--line-soft); border-radius: 8px; padding: 7px 2px 5px; cursor: pointer; }
+.counter:hover { border-color: var(--accent); }
+.counter .cv { font-family: var(--mono); font-size: 15px; font-weight: 650; }
+.counter .cl { font-size: 10px; color: var(--muted); line-height: 1.25; margin-top: 2px; }
+
+.people-row { display: flex; gap: 9px; align-items: center; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+.people-row:hover { background: var(--surface-2); }
+.people-row .avatar { width: 24px; height: 24px; font-size: 9.5px; }
+.people-row .pr-l { font-size: 11px; color: var(--muted); line-height: 1.2; }
+.people-row .pr-v { font-size: 13px; }
+.people-list { padding: 2px 6px 10px; }
+
+.hook-slot {
+  display: none; margin: 10px 0; padding: 8px 12px;
+  border: 1.5px dashed var(--hook); border-radius: 8px;
+  background: var(--hook-soft); color: var(--hook);
+  font-family: var(--mono); font-size: 11.5px;
+}
+.hook-slot b { font-weight: 700; }
+.hook-slot .desc { display: block; font-family: inherit; opacity: .8; margin-top: 2px; font-size: 11px; }
+.show-hooks .hook-slot { display: block; }
+.sidebar .hook-slot { margin: 8px 12px 12px; }
+
+.inline-edit { display: none; }
+.field.editing .fv-static { display: none; }
+.field.editing .inline-edit { display: flex; gap: 6px; align-items: center; }
+.inline-edit select, .inline-edit input {
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--accent); border-radius: 5px; padding: 3px 6px; max-width: 170px;
+}
+.inline-edit .ok { border: none; background: var(--accent); color: var(--accent-ink); border-radius: 5px; padding: 3px 9px; cursor: pointer; font-size: 12px; }
+
+.pb-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pb-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 7px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.pb-btn:hover { border-color: var(--accent); }
+.pb-btn.go { background: var(--good); border-color: var(--good); color: #fff; }
+.pb-btn.go:hover { filter: brightness(1.08); }
+.pb-btn .caret { font-size: 10px; opacity: .7; }
+.pb-bar .pb-src { font-size: 11px; color: var(--muted); margin-left: 4px; }
+.mwf-chain {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  font-size: 12.5px; color: var(--ink-2);
+  background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px;
+  padding: 7px 12px;
+}
+.mwf-chain .lvl {
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  background: var(--accent-soft); color: var(--accent); border-radius: 4px; padding: 1px 6px;
+}
+.mwf-chain .lvl.here { background: var(--accent); color: var(--accent-ink); }
+.mwf-chain a { color: var(--accent); text-decoration: none; }
+.mwf-chain .sep { color: var(--muted); }
+.mwf-chain .sim { margin-left: auto; color: var(--muted); }
+.card.warn-tint .card-h { color: var(--bad); }
+.card .src-chip {
+  margin-left: auto; font-size: 10.5px; font-weight: 500; font-family: var(--mono);
+  color: var(--hook); background: var(--hook-soft); border-radius: 4px; padding: 1px 7px;
+  display: none;
+}
+.show-hooks .card .src-chip { display: inline-block; }
+.subtable .pct { font-family: var(--mono); color: var(--bad); font-weight: 650; white-space: nowrap; }
+.drawer-tabs {
+  position: fixed; right: 0; top: 40%; z-index: 30;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.drawer-tab {
+  writing-mode: vertical-rl; text-orientation: mixed;
+  background: var(--surface); border: 1px solid var(--line); border-right: none;
+  border-radius: 8px 0 0 8px; padding: 10px 5px; font-size: 11.5px; font-weight: 650; color: var(--ink-2);
+  cursor: pointer; box-shadow: var(--shadow);
+}
+.drawer-tab:hover { color: var(--accent); border-color: var(--accent); }
+.drawer-panel {
+  position: fixed; right: 0; top: 0; bottom: 0; width: 340px; max-width: 92vw; z-index: 40;
+  background: var(--surface); border-left: 1px solid var(--line); box-shadow: -8px 0 24px rgba(0,0,0,.12);
+  transform: translateX(100%); transition: transform .2s ease; overflow-y: auto;
+}
+.drawer-panel.open { transform: translateX(0); }
+.drawer-panel .dp-h {
+  position: sticky; top: 0; background: var(--surface);
+  display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+  border-bottom: 1px solid var(--line-soft); font-weight: 700; font-size: 13px;
+}
+.drawer-panel .dp-h .x { margin-left: auto; border: none; background: none; cursor: pointer; color: var(--muted); font-size: 15px; }
+.drawer-panel .dp-b { padding: 12px 16px; display: flex; flex-direction: column; gap: 14px; }
+.drawer-panel .dp-sec { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.drawer-panel .dp-line { font-size: 12.5px; color: var(--ink-2); }
+.note {
+  margin-top: 20px; padding: 12px 16px; border-radius: 10px;
+  background: var(--surface-2); border: 1px solid var(--line-soft);
+  color: var(--ink-2); font-size: 12.5px; max-width: 72ch;
+}
+.note b { color: var(--ink); }
+.kbd { font-family: var(--mono); font-size: 11px; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+
+@media (max-width: 980px) {
+  .grid { grid-template-columns: 1fr; }
+  .sidebar { order: -1; }
+  .counters { grid-template-columns: repeat(5, minmax(56px, 1fr)); overflow-x: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+
+<div class="topbar">
+  <div class="crumb">
+    <a href="#">Чувашия</a> › <a href="#">Поддержка</a> › <span style="font-family:var(--mono)">#48213</span>
+  </div>
+  <div class="spacer"></div>
+  <div class="demo-controls">
+    <span class="tag">Мок</span>
+    <label><input type="checkbox" id="tglHooks"> Слоты плагинов</label>
+    <label><input type="checkbox" id="tglTheme"> Тёмная тема</label>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="issue-head">
+    <div class="head-row">
+      <span class="issue-id">#48213</span>
+      <h1 class="subject">СДУ По запросу ЕГИССО по СНИЛС приходят неверные размеры компенсаций</h1>
+      <div class="head-actions">
+        <button class="btn primary">Комментировать</button>
+        <button class="btn">Следить</button>
+        <button class="btn" aria-label="Ещё действия">⋯</button>
+      </div>
+    </div>
+    <div class="pill-row">
+      <button class="pill status" id="statusPill"><span class="dot"></span>В работе</button>
+      <button class="pill prio">2. Срочный</button>
+      <span class="pill ghost">Тип работ: нет</span>
+      <span class="progress-wrap">
+        <span class="progress" role="img" aria-label="Готовность 0%"><i style="width:0%"></i></span>
+        <span class="progress-num">0%</span>
+      </span>
+      <span class="meta-line">Добавила <a href="#">Орлова Наталия Анатольевна</a> 4 дня назад · обновлено 3 дня назад · срок <b style="color:var(--ink)">20.07.2026</b></span>
+    </div>
+    <div class="pb-bar">
+      <button class="pb-btn go">✔ Решена</button>
+      <button class="pb-btn">Создать подзадачу на отдел <span class="caret">▾</span></button>
+      <button class="pb-btn">📌 Закрепить в графике</button>
+      <button class="pb-btn">Ещё <span class="caret">▾</span></button>
+      <span class="pb-src">процессные кнопки — redmine_process_button, вставка после заголовка сохранена</span>
+    </div>
+    <div class="mwf-chain">
+      <span>⛓</span>
+      <span class="lvl">L1</span> <a href="#">#47950</a> · Закрыта
+      <span class="sep">→</span>
+      <span class="lvl here">L2</span> <b>#48213</b> (вы здесь)
+      <span class="sim">🔎 Похожие: <a href="#">#139182</a>, <a href="#">#139162</a>, <a href="#">#139042</a></span>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <main>
+      <div class="hook-slot"><b>hook: view_issues_show_details_bottom</b><span class="desc">сюда выводят блоки redmine_sla_light, redmine_issue_cause, unread_issues и др.</span></div>
+
+      <section class="card">
+        <div class="card-h">Описание</div>
+        <div class="card-b">
+          <p>По запросу ЕГИССО по СНИЛС <span style="font-family:var(--mono)">123-456-789 00</span> в ответе приходят неверные размеры компенсаций: сумма в ответе не совпадает с назначенной в деле получателя.</p>
+          <div class="desc-quote">Ожидаемо: размер компенсации из актуального назначения.<br>Фактически: возвращается сумма первичного назначения от 2024 года.</div>
+          <div class="desc-code">GET /egisso/api/v1/payments?snils=123-456-789+00 → amount: 1200.00 (ожидалось 1874.50)</div>
+          <div class="attach-row">
+            <span class="attach"><span class="ext">xml</span> ответ_егиссо_15.07.xml · 12 КБ</span>
+            <span class="attach"><span class="ext">png</span> скрин_карточки.png · 340 КБ</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="hook-slot"><b>hook: view_issues_show_description_bottom</b><span class="desc">плагины со ссылками/кнопками под описанием (redmine_process_button)</span></div>
+
+      <section class="card">
+        <div class="card-h">Подзадачи и связи <span class="count">2</span></div>
+        <table class="subtable">
+          <tr>
+            <td class="id">#48214</td>
+            <td><a href="#">Проверить маппинг размеров в адаптере ЕГИССО</a></td>
+            <td><span class="st open">В работе</span></td>
+          </tr>
+          <tr>
+            <td class="id">#47950</td>
+            <td>связана с — <a href="#">СДУ Дубли выплат в отчёте ЕГИССО за июнь</a></td>
+            <td><span class="st">Закрыта</span></td>
+          </tr>
+        </table>
+      </section>
+
+      <section class="card warn-tint">
+        <div class="card-h">Пересекающиеся задачи <span class="count">3</span><span class="src-chip">плагин: task_overlap_finder → слот details_bottom</span></div>
+        <table class="subtable">
+          <tr><td class="id">#131921</td><td><a href="#">Регламентные работы (ежемесячно)</a></td><td class="pct">100%</td></tr>
+          <tr><td class="id">#138870</td><td><a href="#">Анализ — 8080_ДИ_28_46_23.04.2026_8080.docx</a></td><td class="pct">100%</td></tr>
+          <tr><td class="id">#131838</td><td><a href="#">Регламентные работы (еженедельно)</a></td><td class="pct">100%</td></tr>
+        </table>
+      </section>
+
+      <section class="card">
+        <div class="card-h">Отчёты <span class="count">0</span><span class="src-chip">плагин: report_registry → слот details_bottom</span></div>
+        <div class="card-b" style="color:var(--muted); font-size:13px">Нет данных · <a href="#" style="color:var(--accent); text-decoration:none">+ Добавить отчёт</a></div>
+      </section>
+
+      <section class="card">
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" aria-selected="true">Комментарии <span class="n">2</span></button>
+          <button class="tab" role="tab" aria-selected="false">История свойств <span class="n">14</span></button>
+          <button class="tab" role="tab" aria-selected="false">Всё</button>
+          <button class="tab" role="tab" aria-selected="false">Трудозатраты <span class="n">1.00 ч</span></button>
+        </div>
+        <ul class="journal">
+          <li>
+            <span class="avatar alt" aria-hidden="true">ОН</span>
+            <div class="j-body">
+              <div class="j-head"><span class="who">Орлова Наталия Анатольевна</span><span class="when">15.07 14:22</span><span class="jn">#1</span></div>
+              <p class="j-note">Прикладываю ответ сервиса и скрин карточки получателя. Размер в ответе — от назначения 2024 года.</p>
+            </div>
+          </li>
+          <li>
+            <span class="avatar" aria-hidden="true">ЛО</span>
+            <div class="j-body">
+              <div class="j-head"><span class="who">Лапшина Ольга</span><span class="when">17.07 09:05</span><span class="jn">#2</span></div>
+              <p class="j-note">Воспроизвела на тестовом контуре. Похоже, адаптер берёт первую запись вместо актуальной. Беру в работу.</p>
+              <div class="j-props">
+                <div class="j-prop"><b>Статус</b>: <span class="old">Новая</span><span class="arr">→</span>В работе</div>
+                <div class="j-prop"><b>Фактическая дата начала</b>: <span class="old">—</span><span class="arr">→</span>15.07.2026</div>
+              </div>
+            </div>
+          </li>
+        </ul>
+        <div class="hook-slot" style="margin:0 18px 12px"><b>hook: view_issues_history_journal_bottom</b><span class="desc">плагины, дополняющие журнал (redmine_private_files и др.)</span></div>
+        <div class="composer">
+          <span class="avatar" aria-hidden="true">ЛО</span>
+          <div class="box">Комментарий… (изменение свойств — прямо в сайдбаре, всё попадёт в один журнал)</div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="sidebar">
+
+      <details class="group" open>
+        <summary>Люди <span class="count">6</span></summary>
+        <div class="people-list">
+          <div class="people-row"><span class="avatar" aria-hidden="true">ЛО</span><div><div class="pr-l">Назначена · Исполнитель · Отв. от исполнителя · Отв. AI</div><div class="pr-v">Лапшина Ольга</div></div></div>
+          <div class="people-row"><span class="avatar alt" aria-hidden="true">ОН</span><div><div class="pr-l">Автор · Ответственный от заказчика</div><div class="pr-v">Орлова Наталия Анатольевна</div></div></div>
+        </div>
+      </details>
+
+      <details class="group" open>
+        <summary>Сроки <span class="count">4 / 9</span></summary>
+        <div class="fields" id="gDates">
+          <div class="field"><span class="fl">Дата начала</span><span class="fv num">20.07.2026</span></div>
+          <div class="field"><span class="fl">Срок завершения</span><span class="fv num">20.07.2026</span></div>
+          <div class="field"><span class="fl">Факт. начало</span><span class="fv num">15.07.2026</span></div>
+          <div class="field"><span class="fl">Отклонение в сроках</span><span class="fv"><span class="chip-bad">−4</span></span></div>
+          <div class="field empty"><span class="fl">Факт. завершение</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Итоговая дата</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Дата резолюции</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Дата передачи Заказчику</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Причина переноса срока</span><span class="fv">—</span></div>
+        </div>
+        <button class="toggle-empty" data-for="gDates">Показать пустые (5)</button>
+      </details>
+
+      <details class="group" open>
+        <summary>Контракт и оценка <span class="count">3 / 8</span></summary>
+        <div class="fields" id="gContract">
+          <div class="field"><span class="fl">Контракт</span><span class="fv"><a href="#">ЭСРН — Сопровождение 2026</a></span></div>
+          <div class="field"><span class="fl">Относится к контракту</span><span class="fv">Сопровождение 2026</span></div>
+          <div class="field" id="fldEstimate">
+            <span class="fl">Оценка врем. затрат</span>
+            <span class="fv">
+              <span class="fv-static num">1.00 ч</span>
+              <span class="inline-edit"><input type="text" value="1.00" size="5" aria-label="Оценка временных затрат"> <button class="ok">Ок</button></span>
+            </span>
+          </div>
+          <div class="field empty"><span class="fl">Оценка времени на день</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Оценка (тимлид), ч</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Приоритет на день</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Оценка на день</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Порядок выполнения</span><span class="fv">—</span></div>
+        </div>
+        <button class="toggle-empty" data-for="gContract">Показать пустые (5)</button>
+      </details>
+
+      <details class="group" open>
+        <summary>Классификация <span class="count">1 / 7</span></summary>
+        <div class="fields" id="gClass">
+          <div class="field"><span class="fl">Подзадача</span><span class="fv">Нет</span></div>
+          <div class="field empty"><span class="fl">Категория</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Вид доработки</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Задача региона</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Результат решения</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Причина отклонения</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Пакет обновления</span><span class="fv">—</span></div>
+        </div>
+        <button class="toggle-empty" data-for="gClass">Показать пустые (6)</button>
+      </details>
+
+      <details class="group" open>
+        <summary>Контроль качества</summary>
+        <div class="checklist">
+          <div class="check"><span class="cbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Замечания актуальны"></span><span class="lbl">Замечания актуальны</span></div>
+          <div class="check"><span class="cbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Не содержит тех. терминов"></span><span class="lbl">Не содержит тех. терминов</span></div>
+          <div class="check on"><span class="cbox" role="checkbox" aria-checked="true" tabindex="0" aria-label="Даны пояснения изменений"></span><span class="lbl">Даны пояснения изменений</span></div>
+          <div class="check"><span class="cbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Даны рекомендации"></span><span class="lbl">Даны рекомендации</span></div>
+          <div class="check"><span class="cbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Пунктуация и орфография"></span><span class="lbl">Пунктуация и орфография</span></div>
+          <div class="check"><span class="cbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="На контроле"></span><span class="lbl">На контроле</span></div>
+          <div class="check"><span class="cbox" role="checkbox" aria-checked="false" tabindex="0" aria-label="Есть ответ на вопрос"></span><span class="lbl">Есть ответ на вопрос</span></div>
+        </div>
+      </details>
+
+      <details class="group" open>
+        <summary>Счётчики</summary>
+        <div class="counters">
+          <div class="counter"><div class="cv">0</div><div class="cl">Возвраты</div></div>
+          <div class="counter"><div class="cv">0</div><div class="cl">Исправление</div></div>
+          <div class="counter"><div class="cv">0</div><div class="cl">Новые треб.</div></div>
+          <div class="counter"><div class="cv">0</div><div class="cl">Консультация</div></div>
+          <div class="counter"><div class="cv">0</div><div class="cl">Ошибки пакета</div></div>
+        </div>
+      </details>
+
+      <details class="group">
+        <summary>Разработка <span class="count">0 / 2</span></summary>
+        <div class="fields" id="gDev">
+          <div class="field empty"><span class="fl">Ветка на Git</span><span class="fv">—</span></div>
+          <div class="field empty"><span class="fl">Ссылка на контекст</span><span class="fv">—</span></div>
+        </div>
+        <button class="toggle-empty" data-for="gDev">Показать пустые (2)</button>
+      </details>
+
+      <div class="hook-slot"><b>hook: view_issues_sidebar_issues_bottom</b><span class="desc">блоки плагинов в сайдбаре (redmine_favorites, redmine_similar…)</span></div>
+
+    </aside>
+  </div>
+
+  <div class="note">
+    <b>Как читать мок.</b> Пустые поля скрыты и раскрываются кнопкой «Показать пустые» — из 35 полей по умолчанию видны только заполненные. Любое значение редактируется по клику на месте (попробуйте «Оценка врем. затрат»), изменение попадает в журнал как обычная запись Redmine. Переключатель <b>«Слоты плагинов»</b> сверху показывает, где остаются точки вывода других плагинов (хуки <span class="kbd">view_issues_*</span>) и подсвечивает блоки, приходящие из плагинов. Процессные кнопки (зелёная «Решена» и др.), цепочка задач мастера (L1→L2, похожие), «Пересекающиеся задачи», «Отчёты» и выдвижные панели справа (SLA / Диспетчер / Мастер) — всё это вывод существующих плагинов, который новая форма сохраняет: их разметка вставляется в те же точки (Deface после заголовка, хуки details_bottom, панели на body).
+  </div>
+
+  <div class="drawer-tabs">
+    <button class="drawer-tab" data-drawer="none">⏱ SLA 🟢</button>
+    <button class="drawer-tab" data-drawer="none">🧭 Диспетчер</button>
+    <button class="drawer-tab" data-drawer="mwf">📋 Мастер</button>
+  </div>
+  <div class="drawer-panel" id="mwfPanel" aria-hidden="true">
+    <div class="dp-h">📋 Данные мастера <button class="x" aria-label="Закрыть">✕</button></div>
+    <div class="dp-b">
+      <div>
+        <div class="dp-sec">Цепочка задач</div>
+        <div class="dp-line">L1 <a href="#" style="color:var(--accent)">#47950</a> Закрыта → <b>L2 #48213</b> (текущая)</div>
+      </div>
+      <div>
+        <div class="dp-sec">Делегирование</div>
+        <div class="dp-line">Передано в отдел: Инфраструктура / DevOps · исполнитель назначен диспетчером</div>
+      </div>
+      <div>
+        <div class="dp-sec">Похожие задачи</div>
+        <div class="dp-line"><a href="#" style="color:var(--accent)">#139182</a>, <a href="#" style="color:var(--accent)">#139162</a>, <a href="#" style="color:var(--accent)">#139042</a></div>
+      </div>
+      <div>
+        <div class="dp-sec">Справочники мастера</div>
+        <div class="dp-line">Тип работ: Инфраструктура / DevOps · Каталог услуг: — · Причины переноса: —</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('tglTheme').addEventListener('change', function () {
+  document.documentElement.dataset.theme = this.checked ? 'dark' : 'light';
+});
+if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.getElementById('tglTheme').checked = true;
+}
+document.getElementById('tglHooks').addEventListener('change', function () {
+  document.body.classList.toggle('show-hooks', this.checked);
+});
+document.querySelectorAll('.toggle-empty').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var g = document.getElementById(btn.dataset.for);
+    var on = g.classList.toggle('show-empty');
+    btn.textContent = on ? 'Скрыть пустые' : btn.textContent.replace('Скрыть', 'Показать');
+    if (!on) btn.textContent = btn.textContent.replace(/Скрыть пустые/, 'Показать пустые (' + g.querySelectorAll('.field.empty').length + ')');
+    else btn.textContent = 'Скрыть пустые';
+  });
+});
+var fld = document.getElementById('fldEstimate');
+fld.addEventListener('click', function (e) {
+  if (fld.classList.contains('editing')) return;
+  fld.classList.add('editing');
+  fld.querySelector('input').focus();
+});
+fld.querySelector('.ok').addEventListener('click', function (e) {
+  e.stopPropagation();
+  var v = fld.querySelector('input').value || '1.00';
+  fld.querySelector('.fv-static').textContent = v + ' ч';
+  fld.classList.remove('editing');
+});
+document.querySelectorAll('.check').forEach(function (c) {
+  c.addEventListener('click', function () {
+    c.classList.toggle('on');
+    var box = c.querySelector('.cbox');
+    box.setAttribute('aria-checked', c.classList.contains('on') ? 'true' : 'false');
+  });
+});
+var mwfPanel = document.getElementById('mwfPanel');
+document.querySelectorAll('.drawer-tab').forEach(function (t) {
+  t.addEventListener('click', function () {
+    if (t.dataset.drawer === 'mwf') {
+      var open = mwfPanel.classList.toggle('open');
+      mwfPanel.setAttribute('aria-hidden', open ? 'false' : 'true');
+    }
+  });
+});
+mwfPanel.querySelector('.x').addEventListener('click', function () {
+  mwfPanel.classList.remove('open');
+  mwfPanel.setAttribute('aria-hidden', 'true');
+});
+document.querySelectorAll('.tab').forEach(function (t) {
+  t.addEventListener('click', function () {
+    document.querySelectorAll('.tab').forEach(function (x) { x.setAttribute('aria-selected', 'false'); });
+    t.setAttribute('aria-selected', 'true');
+  });
+});
+</script>

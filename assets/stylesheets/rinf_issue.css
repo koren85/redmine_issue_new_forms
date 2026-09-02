@@ -1,0 +1,423 @@
+/*
+ * redmine_issue_new_forms — стили новой формы задачи (issue show).
+ * Область действия: всё под .rinf-issue (div.issue.details.rinf-issue).
+ * Тема Redmine — только light (палитра зафиксирована переменными ниже,
+ * тёмная тема не поддерживается и не нужна).
+ * Ничего глобального: каждый селектор начинается с .rinf-issue/.rinf-.
+ */
+
+/* ---------- Палитра и базовый сброс (только внутри .rinf-issue) ---------- */
+
+.rinf-issue {
+  --rinf-ground: #F6F7F9;
+  --rinf-surface: #FFFFFF;
+  --rinf-surface-2: #EEF1F5;
+  --rinf-ink: #1D2635;
+  --rinf-ink-2: #4A566B;
+  --rinf-muted: #7C879C;
+  --rinf-line: #DDE2EA;
+  --rinf-line-soft: #E8ECF2;
+  --rinf-accent: #2F6FB2;
+  --rinf-accent-ink: #FFFFFF;
+  --rinf-accent-soft: #E3EDF8;
+  --rinf-good: #2E7D4F;
+  --rinf-good-soft: #E2F0E8;
+  --rinf-bad: #B3403A;
+  --rinf-bad-soft: #F7E4E3;
+  --rinf-shadow: 0 1px 2px rgba(29, 38, 53, .06), 0 4px 16px rgba(29, 38, 53, .05);
+  --rinf-radius: 10px;
+  --rinf-radius-sm: 6px;
+  --rinf-mono: "SF Mono", ui-monospace, "Cascadia Mono", "Roboto Mono", Menlo, monospace;
+}
+
+.rinf-issue,
+.rinf-issue *,
+.rinf-issue *::before,
+.rinf-issue *::after {
+  box-sizing: border-box;
+}
+
+/* ---------- Шапка: аватар / тема / автор / пилюли ---------- */
+
+/* Ядро красит div.issue в жёлтый (#ffffdd) с рамкой — компаунд-селектор
+   .rinf-issue.details (0,2,0) перебивает div.issue (0,1,1) без !important. */
+.rinf-issue.details {
+  background: transparent;
+  border: none;
+  padding: 0;
+  /* На широких мониторах не растягиваемся на весь #content: колонка свойств
+     должна стоять вплотную к контенту, а не липнуть к правому краю страницы. */
+  max-width: 1480px;
+}
+
+/* Шапка — grid: аватар слева на все ряды, справа колонкой тема / автор / пилюли.
+   Плоская flex-строка сжимала цепочку родительских задач в узкий столбец. */
+.rinf-issue .rinf-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 14px;
+  row-gap: 4px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.rinf-issue .rinf-head .gravatar-with-child {
+  grid-row: 1 / span 3;
+}
+
+/* Ядро (div.issue img.gravatar) даёт float:left + margin — внутри flex-контейнера
+   float браузером всё равно игнорируется (флекс-элементы его не применяют),
+   а margin перебиваем большей специфичностью, без !important. */
+.rinf-issue .rinf-head img.gravatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+}
+
+.rinf-issue .rinf-subject {
+  flex: 1;
+  min-width: 0;
+}
+
+.rinf-issue .rinf-subject h3 {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--rinf-ink);
+  text-wrap: balance;
+}
+
+/* Тема master_forms_modern красит ".details p.author" без !important —
+   у .rinf-issue.details на этом же узле уже есть обе нужные нам классы,
+   поэтому третий класс автора добивает специфичность честно, без !important. */
+.rinf-issue.details p.author {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  color: var(--rinf-muted);
+}
+
+.rinf-issue.details p.author a {
+  color: var(--rinf-accent);
+}
+
+.rinf-issue .rinf-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rinf-issue .rinf-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: var(--rinf-surface-2);
+  color: var(--rinf-ink-2);
+  cursor: default;
+}
+
+.rinf-issue .rinf-pill--status {
+  background: var(--rinf-accent-soft);
+  color: var(--rinf-accent);
+}
+
+.rinf-issue .rinf-pill--priority {
+  background: var(--rinf-bad-soft);
+  color: var(--rinf-bad);
+}
+
+/* Прогресс-бар ядра (table.progress) внутри пилюль — аккуратно уменьшаем.
+   float:left из ядра гасится тем, что таблица — flex-элемент .rinf-pills. */
+.rinf-issue .rinf-pills table.progress {
+  width: 90px;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.rinf-issue .rinf-pills table.progress td {
+  height: 6px;
+}
+
+/* ---------- Двухколоночная сетка ---------- */
+
+.rinf-issue .rinf-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  align-items: start;
+  gap: 24px;
+}
+
+.rinf-issue .rinf-main,
+.rinf-issue .rinf-side {
+  min-width: 0;
+}
+
+@media (max-width: 1000px) {
+  .rinf-issue .rinf-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .rinf-issue .rinf-side {
+    order: -1;
+  }
+}
+
+/* ---------- Карточки в основной колонке ---------- */
+
+.rinf-issue .rinf-main > .rinf-card {
+  background: var(--rinf-surface);
+  border: 1px solid var(--rinf-line-soft);
+  border-radius: var(--rinf-radius);
+  box-shadow: var(--rinf-shadow);
+  padding: 16px 18px;
+}
+
+/* Вертикальный ритм основной колонки: карточки и плагин-зоны чередуются,
+   поэтому отступ задаём любому непервому ребёнку, а не только card+card. */
+.rinf-issue .rinf-main > * + * {
+  margin-top: 16px;
+}
+
+/* Журнал внутри карточки: вкладки истории и форма #update живут здесь же. */
+.rinf-issue .rinf-card--history #history {
+  margin-top: 0;
+}
+
+.rinf-issue .rinf-card__title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--rinf-ink);
+}
+
+/* ---------- Сайдбар: группы-details ---------- */
+
+.rinf-issue .rinf-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  /* Свойства остаются на экране при прокрутке длинного журнала;
+     если колонка выше окна — скроллится внутри себя. */
+  position: sticky;
+  top: 10px;
+  max-height: calc(100vh - 20px);
+  overflow-y: auto;
+}
+
+.rinf-issue .rinf-group {
+  background: var(--rinf-surface);
+  border: 1px solid var(--rinf-line-soft);
+  border-radius: var(--rinf-radius);
+  box-shadow: var(--rinf-shadow);
+}
+
+.rinf-issue .rinf-group__summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--rinf-ink-2);
+}
+
+.rinf-issue .rinf-group__summary::-webkit-details-marker,
+.rinf-issue .rinf-group__summary::marker {
+  display: none;
+  content: "";
+}
+
+.rinf-issue .rinf-group__summary::before {
+  content: "\25B8";
+  color: var(--rinf-muted);
+  font-size: 10px;
+  transition: transform .15s ease;
+}
+
+.rinf-issue .rinf-group[open] > .rinf-group__summary::before {
+  transform: rotate(90deg);
+}
+
+.rinf-issue .rinf-group__count {
+  margin-left: auto;
+  font-family: var(--rinf-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--rinf-muted);
+}
+
+/* ---------- Поля группы (совместимость с ядровыми .attribute/.label/.value) ---------- */
+
+.rinf-issue .rinf-fields {
+  padding: 2px 6px 8px;
+}
+
+.rinf-issue .rinf-field {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  align-items: baseline;
+  gap: 10px;
+  padding: 5px 10px;
+  border-radius: var(--rinf-radius-sm);
+  cursor: pointer;
+}
+
+.rinf-issue .rinf-field:hover {
+  background: var(--rinf-surface-2);
+}
+
+.rinf-issue .rinf-field__label {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--rinf-muted);
+}
+
+.rinf-issue .rinf-field__value {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--rinf-ink);
+  overflow-wrap: anywhere;
+}
+
+/* Ядро задаёт "div.issue .attribute .value {overflow:auto; text-overflow:ellipsis}"
+   без требования обёртки .attributes — перебиваем специфичностью (4 класса), без !important. */
+.rinf-issue .rinf-fields .rinf-field .rinf-field__value {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Жёсткая нейтрализация: живой e2e подтвердил, что разметка сайдбара создаёт
+   предка .attributes (`.attributes.rinf-groups`), поэтому ядровые правила
+   div.issue .attributes .attribute{...} / .attribute .label{...} (application.css:528-530)
+   реально применяются и схлопывают колонку значения (padding-left:180px на .attribute,
+   margin-left:-180px + overflow:hidden на .label). Ниже — построчная нейтрализация
+   каждого свойства, которое ядро вешает на .attribute/.label/.value в этом контексте —
+   единственное место в файле, где допустим !important. */
+.rinf-issue .rinf-group .attribute {
+  float: none !important;
+  width: auto !important;
+  clear: none !important;
+  min-height: 0 !important;
+  padding: 5px 10px !important;
+}
+
+.rinf-issue .rinf-group .label {
+  float: none !important;
+  width: auto !important;
+  margin-left: 0 !important;
+  font-weight: 500 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.rinf-issue .rinf-group .value {
+  float: none !important;
+  width: auto !important;
+}
+
+/* ---------- Пустые поля ---------- */
+
+.rinf-issue .rinf-field--empty {
+  display: none;
+}
+
+.rinf-issue .rinf-group.rinf-show-empty .rinf-field--empty {
+  display: grid;
+}
+
+.rinf-issue .rinf-field--empty .rinf-field__value {
+  color: var(--rinf-muted);
+}
+
+.rinf-issue .rinf-toggle-empty {
+  display: inline-block;
+  margin: 2px 10px 8px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--rinf-accent);
+  cursor: pointer;
+}
+
+.rinf-issue .rinf-toggle-empty:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Чек-лист контроля качества ---------- */
+
+.rinf-issue .rinf-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 8px;
+  border-radius: var(--rinf-radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.rinf-issue .rinf-check:hover {
+  background: var(--rinf-surface-2);
+}
+
+.rinf-issue .rinf-check__box {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid var(--rinf-line);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--rinf-accent-ink);
+}
+
+.rinf-issue .rinf-check--on .rinf-check__box {
+  background: var(--rinf-good);
+  border-color: var(--rinf-good);
+}
+
+.rinf-issue .rinf-check--on .rinf-check__box::after {
+  content: "\2713";
+}
+
+.rinf-issue .rinf-check .rinf-field__label {
+  font-size: 13px;
+  color: var(--rinf-muted);
+}
+
+.rinf-issue .rinf-check--on .rinf-field__label {
+  color: var(--rinf-ink);
+}
+
+/* ---------- Слоты вывода хуков сторонних плагинов ---------- */
+
+/* Только отступы/ширина — содержимое зоны рисуют чужие хуки, мы его не красим. */
+.rinf-issue .rinf-plugin-zone {
+  width: 100%;
+  margin: 10px 0;
+}
+
+/* ---------- Доступность ---------- */
+
+.rinf-issue .rinf-pill:focus-visible,
+.rinf-issue .rinf-toggle-empty:focus-visible,
+.rinf-issue .rinf-group__summary:focus-visible,
+.rinf-issue .rinf-check:focus-visible {
+  outline: 2px solid var(--rinf-accent);
+  outline-offset: 2px;
+}

@@ -1,0 +1,181 @@
+<%#
+  New issue show page (redmine_issue_new_forms).
+
+  This view is prepended at runtime by RedmineIssueNewForms::IssuesControllerPatch
+  (see lib/redmine_issue_new_forms/issues_controller_patch.rb) so that its view
+  path wins regardless of plugin load order.
+
+  Structural contract that MUST be preserved here (see
+  docs/research/compatibility-contract.md):
+    - exactly one <h2>
+    - a single container matching `#content div.issue.details`
+    - `.contextual` blocks with a.icon-edit/copy/del (via the 'action_menu'
+      partial) and a.icon-comment (description quote link)
+    - `#update` (via the 'action_menu_edit' partial, rendered verbatim from
+      core - do NOT add a second one), `#context-menu`
+    - every call_hook present in core's issues/show.html.erb:
+        view_issues_show_details_bottom, view_issues_show_description_bottom
+%>
+<%= render :partial => 'action_menu' %>
+
+<h2><%= issue_heading(@issue) %></h2>
+
+<div class="<%= @issue.css_classes %> details rinf-issue">
+  <% if @prev_issue_id || @next_issue_id %>
+    <div class="next-prev-links contextual">
+      <%= link_to_if @prev_issue_id,
+                     "\xc2\xab #{l(:label_previous)}",
+                     (@prev_issue_id ? issue_path(@prev_issue_id) : nil),
+                     :title => "##{@prev_issue_id}",
+                     :accesskey => accesskey(:previous) %> |
+      <% if @issue_position && @issue_count %>
+        <span class="position">
+          <%= link_to_if @query_path,
+                         l(:label_item_position, :position => @issue_position, :count => @issue_count),
+                         @query_path %>
+        </span> |
+      <% end %>
+      <%= link_to_if @next_issue_id,
+                     "#{l(:label_next)} \xc2\xbb",
+                     (@next_issue_id ? issue_path(@next_issue_id) : nil),
+                     :title => "##{@next_issue_id}",
+                     :accesskey => accesskey(:next) %>
+    </div>
+  <% end %>
+
+  <div class="rinf-head">
+    <div class="gravatar-with-child">
+      <%= author_avatar(@issue.author, :size => "50") %>
+      <%= assignee_avatar(@issue.assigned_to, :size => "22", :class => "gravatar-child") if @issue.assigned_to %>
+    </div>
+
+    <div class="rinf-subject">
+      <div class="subject">
+        <%= render_issue_subject_with_tree(@issue) %>
+      </div>
+    </div>
+
+    <p class="author">
+      <%= authoring @issue.created_on, @issue.author %>.
+      <% if @issue.created_on != @issue.updated_on %>
+        <%= l(:label_updated_time, time_tag(@issue.updated_on)).html_safe %>.
+      <% end %>
+    </p>
+
+    <div class="rinf-pills">
+      <% unless rinf_hidden_attr?(@issue, 'status') %>
+        <span class="rinf-pill rinf-pill--status status"><%= @issue.status.name %></span>
+      <% end %>
+      <% unless rinf_hidden_attr?(@issue, 'priority_id') %>
+        <span class="rinf-pill rinf-pill--priority priority"><%= @issue.priority.name %></span>
+      <% end %>
+      <% unless rinf_disabled_attr?(@issue, 'done_ratio') || rinf_hidden_attr?(@issue, 'done_ratio') %>
+        <div class="rinf-pill rinf-pill--done-ratio progress">
+          <%= progress_bar(@issue.done_ratio, :legend => "#{@issue.done_ratio}%") %>
+        </div>
+      <% end %>
+      <% if @issue.due_date.present? && !(rinf_disabled_attr?(@issue, 'due_date') || rinf_hidden_attr?(@issue, 'due_date')) %>
+        <span class="rinf-pill rinf-pill--due-date due-date"><%= issue_due_date_details(@issue) %></span>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="rinf-layout">
+    <div class="rinf-main">
+      <% if @issue.description? %>
+        <section class="rinf-card rinf-card--description">
+          <div class="description">
+            <div class="contextual">
+              <%= link_to l(:button_quote), quoted_issue_path(@issue), :remote => true, :method => 'post', :class => 'icon icon-comment' if @issue.notes_addable? %>
+            </div>
+
+            <p><strong><%= l(:field_description) %></strong></p>
+            <div class="wiki">
+              <%= textilizable @issue, :description, :attachments => @issue.attachments %>
+            </div>
+          </div>
+        </section>
+      <% end %>
+
+      <% full_width_cf_html = render_full_width_custom_fields_rows(@issue) %>
+      <% if full_width_cf_html.present? %>
+        <section class="rinf-card rinf-card--fullcf">
+          <%= full_width_cf_html %>
+        </section>
+      <% end %>
+
+      <div class="rinf-plugin-zone" id="rinf-zone-description-bottom">
+        <%= call_hook(:view_issues_show_description_bottom, :issue => @issue) %>
+      </div>
+
+      <% if @issue.attachments.any? %>
+        <section class="rinf-card rinf-card--attachments">
+          <p><strong><%= l(:label_attachment_plural) %></strong></p>
+          <%= link_to_attachments @issue, :thumbnails => true %>
+        </section>
+      <% end %>
+
+      <% if !@issue.leaf? || User.current.allowed_to?(:manage_subtasks, @project) %>
+        <div id="issue_tree" class="rinf-card rinf-card--subtasks">
+          <div class="contextual">
+            <%= link_to_new_subtask(@issue) if User.current.allowed_to?(:manage_subtasks, @project) %>
+          </div>
+          <p><strong><%= l(:label_subtask_plural) %></strong></p>
+          <%= form_tag({}, :data => {:cm_url => issues_context_menu_path}) do %>
+            <%= render_descendants_tree(@issue) unless @issue.leaf? %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% if @relations.present? || User.current.allowed_to?(:manage_issue_relations, @project) %>
+        <div id="relations" class="rinf-card rinf-card--relations">
+          <%= render :partial => 'relations' %>
+        </div>
+      <% end %>
+
+      <div class="attributes rinf-plugin-zone" id="rinf-zone-details-bottom">
+        <%= call_hook(:view_issues_show_details_bottom, :issue => @issue) %>
+      </div>
+
+      <section class="rinf-card rinf-card--history">
+        <%= render partial: 'action_menu_edit' if User.current.wants_comments_in_reverse_order? %>
+
+        <div id="history">
+          <%= render_tabs issue_history_tabs, issue_history_default_tab %>
+        </div>
+
+        <%= render partial: 'action_menu_edit' unless User.current.wants_comments_in_reverse_order? %>
+      </section>
+    </div>
+
+    <aside class="rinf-side">
+      <div class="attributes rinf-groups">
+        <%= rinf_render_field_groups(@issue) %>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<% other_formats_links do |f| %>
+  <%= f.link_to 'Atom', :url => {:key => User.current.rss_key} %>
+  <%= f.link_to 'PDF' %>
+<% end %>
+
+<% html_title "#{@issue.tracker.name} ##{@issue.id}: #{@issue.subject}" %>
+
+<% content_for :sidebar do %>
+  <%= render :partial => 'issues/sidebar' %>
+
+  <% if User.current.allowed_to?(:add_issue_watchers, @project) ||
+    (@issue.watchers.present? && User.current.allowed_to?(:view_issue_watchers, @project)) %>
+    <div id="watchers">
+      <%= render :partial => 'watchers/watchers', :locals => {:watched => @issue} %>
+    </div>
+  <% end %>
+<% end %>
+
+<% content_for :header_tags do %>
+    <%= auto_discovery_link_tag(:atom, {:format => 'atom', :key => User.current.rss_key}, :title => "#{@issue.project} - #{@issue.tracker} ##{@issue.id}: #{@issue.subject}") %>
+<% end %>
+
+<%= context_menu %>
