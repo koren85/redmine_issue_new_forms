@@ -3,7 +3,6 @@ ru:
   rinf_setting_groups_yaml: "Группировка полей (YAML)"
   rinf_setting_groups_yaml_placeholder: "Люди:\n  - Назначена\n  - Исполнитель\nСроки:\n  - Дата начала\n  - Срок завершения"
   rinf_setting_groups_yaml_info: "Словарь «Группа: [список полей]». Поля указываются по отображаемому названию (стандартные атрибуты и кастомные поля). Пусто — используется группировка по умолчанию."
-  rinf_group_main: "Основное"
   rinf_group_people: "Люди"
   rinf_group_dates: "Сроки"
   rinf_group_contract: "Контракт и оценка"

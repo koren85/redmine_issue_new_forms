@@ -18,8 +18,11 @@ module RedmineIssueNewForms
   #              custom fields (and, from the settings UI, core attributes
   #              too) are matched.
   class FieldGroups
+    # NOTE: there is deliberately no "General" group for status / priority /
+    # done_ratio / parent issue: those four are already rendered in the page
+    # header (the pill row and the subject tree), and RinfIssuesHelper does not
+    # emit descriptors for them at all - see rinf_field_descriptors.
     DEFAULT = [
-      [:main, :rinf_group_main, [:status, :priority, :done_ratio, :parent]],
       [:people, :rinf_group_people, [
         :assigned_to,
         'Ответственный от исполнителя',

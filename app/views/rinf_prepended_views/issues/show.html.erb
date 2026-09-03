@@ -108,13 +108,6 @@
         <%= call_hook(:view_issues_show_description_bottom, :issue => @issue) %>
       </div>
 
-      <% if @issue.attachments.any? %>
-        <section class="rinf-card rinf-card--attachments">
-          <p><strong><%= l(:label_attachment_plural) %></strong></p>
-          <%= link_to_attachments @issue, :thumbnails => true %>
-        </section>
-      <% end %>
-
       <% if !@issue.leaf? || User.current.allowed_to?(:manage_subtasks, @project) %>
         <div id="issue_tree" class="rinf-card rinf-card--subtasks">
           <div class="contextual">
@@ -137,15 +130,6 @@
         <%= call_hook(:view_issues_show_details_bottom, :issue => @issue) %>
       </div>
 
-      <section class="rinf-card rinf-card--history">
-        <%= render partial: 'action_menu_edit' if User.current.wants_comments_in_reverse_order? %>
-
-        <div id="history">
-          <%= render_tabs issue_history_tabs, issue_history_default_tab %>
-        </div>
-
-        <%= render partial: 'action_menu_edit' unless User.current.wants_comments_in_reverse_order? %>
-      </section>
     </div>
 
     <aside class="rinf-side">
@@ -154,6 +138,34 @@
       </div>
     </aside>
   </div>
+
+  <%# Journal and attachments live OUTSIDE .rinf-layout on purpose: the two
+      column grid is for the description and the plugin blocks that belong
+      next to the attribute groups, while the correspondence - the thing most
+      people open the page for - gets the full width of the page. %>
+  <section class="rinf-card rinf-card--history">
+    <%= render partial: 'action_menu_edit' if User.current.wants_comments_in_reverse_order? %>
+
+    <div id="history">
+      <%= render_tabs issue_history_tabs, issue_history_default_tab %>
+    </div>
+
+    <%= render partial: 'action_menu_edit' unless User.current.wants_comments_in_reverse_order? %>
+  </section>
+
+  <%# Attachments sit below the journal and start collapsed: on this
+      installation an issue routinely carries 20+ screenshots, and as an
+      always-open block above the journal they pushed the comments off the
+      first screen. %>
+  <% if @issue.attachments.any? %>
+    <details class="rinf-card rinf-card--attachments" data-rinf-group="attachments">
+      <summary class="rinf-card__summary">
+        <%= l(:label_attachment_plural) %>
+        <span class="rinf-card__count"><%= @issue.attachments.size %></span>
+      </summary>
+      <%= link_to_attachments @issue, :thumbnails => true %>
+    </details>
+  <% end %>
 </div>
 
 <% other_formats_links do |f| %>
@@ -163,15 +175,45 @@
 
 <% html_title "#{@issue.tracker.name} ##{@issue.id}: #{@issue.subject}" %>
 
+<%#
+  Sidebar. Core's issues/_sidebar partial is inlined rather than rendered so
+  that the saved-query lists can be collapsed: with ~40 saved queries they were
+  the tallest element on the whole issue page while having nothing to do with
+  the issue being read. All three hooks of the core partial are kept verbatim
+  and in their original order (view_issues_sidebar_issues_bottom is used by
+  westaco_versions and additionals - see docs/research/compatibility-contract.md).
+  #watchers keeps its id and moves to the bottom of the rail.
+%>
 <% content_for :sidebar do %>
-  <%= render :partial => 'issues/sidebar' %>
+  <div class="rinf-sidebar">
+    <%= call_hook(:view_issues_sidebar_issues_bottom) %>
+    <%= call_hook(:view_issues_sidebar_planning_bottom) %>
 
-  <% if User.current.allowed_to?(:add_issue_watchers, @project) ||
-    (@issue.watchers.present? && User.current.allowed_to?(:view_issue_watchers, @project)) %>
-    <div id="watchers">
-      <%= render :partial => 'watchers/watchers', :locals => {:watched => @issue} %>
-    </div>
-  <% end %>
+    <% sidebar_query_list = sidebar_queries(IssueQuery, @project) %>
+    <% if sidebar_query_list.any? %>
+      <details class="rinf-sidebar__queries" data-rinf-group="sidebar-queries">
+        <summary class="rinf-sidebar__summary">
+          <%= l(:label_query_plural) %>
+          <span class="rinf-sidebar__count"><%= sidebar_query_list.size %></span>
+        </summary>
+        <div class="rinf-sidebar__queries-body">
+          <%= query_links(l(:label_my_queries), sidebar_query_list.select(&:is_private?)) %>
+          <%= query_links(l(:label_query_plural), sidebar_query_list.reject(&:is_private?)) %>
+        </div>
+      </details>
+    <% end %>
+
+    <%= call_hook(:view_issues_sidebar_queries_bottom) %>
+
+    <%# Watchers last: the blocks above are read on every visit, this one is
+        consulted occasionally. %>
+    <% if User.current.allowed_to?(:add_issue_watchers, @project) ||
+      (@issue.watchers.present? && User.current.allowed_to?(:view_issue_watchers, @project)) %>
+      <div id="watchers">
+        <%= render :partial => 'watchers/watchers', :locals => {:watched => @issue} %>
+      </div>
+    <% end %>
+  </div>
 <% end %>
 
 <% content_for :header_tags do %>

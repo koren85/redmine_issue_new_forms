@@ -3,7 +3,6 @@ en:
   rinf_setting_groups_yaml: "Field grouping (YAML)"
   rinf_setting_groups_yaml_placeholder: "People:\n  - Assignee\nDates:\n  - Start date\n  - Due date"
   rinf_setting_groups_yaml_info: "A mapping of group name to a list of field labels (core attributes and custom fields). Leave empty to use the default grouping."
-  rinf_group_main: "General"
   rinf_group_people: "People"
   rinf_group_dates: "Dates"
   rinf_group_contract: "Contract & estimates"

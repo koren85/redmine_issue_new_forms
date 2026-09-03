@@ -59,22 +59,10 @@ module RinfIssuesHelper
     list = []
     return list unless issue
 
-    unless rinf_hidden_attr?(issue, 'status')
-      list << {
-        key: :status, label: l(:field_status), css: 'status',
-        value_html: (issue.status ? issue.status.name : nil),
-        empty: issue.status.nil?
-      }
-    end
-
-    unless rinf_hidden_attr?(issue, 'priority_id')
-      list << {
-        key: :priority, label: l(:field_priority), css: 'priority',
-        value_html: (issue.priority ? issue.priority.name : nil),
-        empty: issue.priority.nil?
-      }
-    end
-
+    # Status, priority and done_ratio are NOT descriptors: the header pill row
+    # (see issues/show.html.erb) already renders all three, and the parent
+    # issue is already in the subject tree above it. Repeating them here is
+    # what the old "General" group did - it was pure duplication.
     unless rinf_disabled_attr?(issue, 'assigned_to_id') || rinf_hidden_attr?(issue, 'assigned_to_id')
       list << {
         key: :assigned_to, label: l(:field_assigned_to), css: 'assigned-to',
@@ -118,20 +106,8 @@ module RinfIssuesHelper
       }
     end
 
-    unless rinf_disabled_attr?(issue, 'done_ratio') || rinf_hidden_attr?(issue, 'done_ratio')
-      list << {
-        key: :done_ratio, label: l(:field_done_ratio), css: 'progress',
-        value_html: progress_bar(issue.done_ratio, :legend => "#{issue.done_ratio}%"),
-        empty: false
-      }
-    end
-
     unless rinf_disabled_attr?(issue, 'estimated_hours') || rinf_hidden_attr?(issue, 'estimated_hours')
       list << rinf_estimated_hours_descriptor(issue)
-    end
-
-    unless rinf_disabled_attr?(issue, 'parent_issue_id') || rinf_hidden_attr?(issue, 'parent_issue_id')
-      list << rinf_parent_descriptor(issue)
     end
 
     list.concat(rinf_custom_field_descriptors(issue))
@@ -155,17 +131,6 @@ module RinfIssuesHelper
     {
       key: :estimated_hours, label: l(:field_estimated_hours), css: 'estimated-hours',
       value_html: value, empty: value.blank?
-    }
-  end
-
-  def rinf_parent_descriptor(issue)
-    parent = issue.parent
-    parent_visible = parent.present? && parent.respond_to?(:visible?) && parent.visible?
-
-    {
-      key: :parent, label: l(:field_parent_issue), css: 'parent',
-      value_html: (parent_visible ? link_to_issue(parent, :subject => false) : nil),
-      empty: !parent_visible
     }
   end
 
@@ -233,14 +198,12 @@ module RinfIssuesHelper
     # they always count as filled and never contribute to the hideable-empty
     # count - otherwise an all-bool group like "Quality control" would show
     # a misleading "show empty (N)" button that toggles nothing.
-    filled = fields.reject { |f| f[:empty] && !f[:bool] }
     hideable_empty = fields.count { |f| f[:empty] && !f[:bool] }
 
-    summary = content_tag(
-      'summary',
-      safe_join([group_label, ' ', content_tag('span', "#{filled.size} / #{fields.size}", :class => 'rinf-group__count')]),
-      :class => 'rinf-group__summary'
-    )
+    # No "filled / total" counter here on purpose: it was unreadable (nobody
+    # decodes "3 / 4") and redundant - the "show empty (N)" button below the
+    # group already names the only number that means anything to the reader.
+    summary = content_tag('summary', group_label, :class => 'rinf-group__summary')
 
     fields_html = content_tag('div', safe_join(fields.map { |f| rinf_render_field(f) }), :class => 'rinf-fields')
 
@@ -248,7 +211,8 @@ module RinfIssuesHelper
       if hideable_empty > 0
         content_tag(
           'button', l(:rinf_show_empty, :count => hideable_empty),
-          :type => 'button', :class => 'rinf-toggle-empty', :data => { 'rinf-target' => key }
+          :type => 'button', :class => 'rinf-toggle-empty',
+          :data => { 'rinf-target' => key, 'rinf-hide-label' => l(:rinf_hide_empty) }
         )
       end
 

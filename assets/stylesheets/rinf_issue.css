@@ -3,12 +3,18 @@
  * Область действия: всё под .rinf-issue (div.issue.details.rinf-issue).
  * Тема Redmine — только light (палитра зафиксирована переменными ниже,
  * тёмная тема не поддерживается и не нужна).
- * Ничего глобального: каждый селектор начинается с .rinf-issue/.rinf-.
+ * Ничего глобального: селектор либо начинается с .rinf-issue/.rinf-, либо
+ * ограничен классами body (controller-issues + action-show) — так стилизуется
+ * ядровый #sidebar, единственный узел, который лежит вне .rinf-issue.
  */
 
 /* ---------- Палитра и базовый сброс (только внутри .rinf-issue) ---------- */
 
-.rinf-issue {
+/* Переменные объявлены на :root, потому что ядровый #sidebar лежит вне
+   .rinf-issue и всё равно должен быть в одной палитре с формой. Кастомные
+   свойства ничего не красят сами по себе, префикс --rinf-* исключает
+   пересечение с ядром и темами. */
+:root {
   --rinf-ground: #F6F7F9;
   --rinf-surface: #FFFFFF;
   --rinf-surface-2: #EEF1F5;
@@ -30,6 +36,48 @@
   --rinf-mono: "SF Mono", ui-monospace, "Cascadia Mono", "Roboto Mono", Menlo, monospace;
 }
 
+/* ---------- Заголовок: номер задачи рядом с темой ---------- */
+
+/* Ядро печатает «Поддержка #134698» в h2 задолго до темы задачи: между ними
+   встают тулбар кнопок (deface insert_after: 'h2' у redmine_process_button) и
+   строка цепочки/«Похожие» (её JS master_forms вставляет перед
+   div.issue.details). Номер — важная часть идентификации задачи, поэтому
+   rinf_issue.js переносит сам h2 внутрь .rinf-subject, к теме. DOM-перенос, а
+   не дубль: h2 на странице остаётся единственным, бейдж L1 и «Тип работ»
+   (их master_forms кладёт внутрь h2 ещё при разборе документа) едут вместе с
+   ним, а тулбар кнопок остаётся на своём месте.
+   Если JS не отработал, h2 просто остаётся там, где его нарисовало ядро. */
+.rinf-issue .rinf-subject {
+  display: flex;
+  align-items: baseline;
+  column-gap: 14px;
+  flex-wrap: wrap;
+}
+
+.rinf-issue .rinf-subject h2 {
+  margin: 0;
+  padding: 0 14px 0 0;
+  border: none;
+  border-right: 1px solid var(--rinf-line);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0;
+  color: var(--rinf-ink-2);
+  white-space: nowrap;
+}
+
+/* Бейджи master_forms заданы в em и вслед за h2 поехали бы по размеру. */
+.rinf-issue .rinf-subject h2 .mwf-level-badge,
+.rinf-issue .rinf-subject h2 .mwf-work-type-badge {
+  font-size: .72em;
+}
+
+.rinf-issue .rinf-subject .subject {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
 .rinf-issue,
 .rinf-issue *,
 .rinf-issue *::before,
@@ -45,9 +93,6 @@
   background: transparent;
   border: none;
   padding: 0;
-  /* На широких мониторах не растягиваемся на весь #content: колонка свойств
-     должна стоять вплотную к контенту, а не липнуть к правому краю страницы. */
-  max-width: 1480px;
 }
 
 /* Шапка — grid: аватар слева на все ряды, справа колонкой тема / автор / пилюли.
@@ -82,7 +127,7 @@
 
 .rinf-issue .rinf-subject h3 {
   margin: 0 0 4px;
-  font-size: 20px;
+  font-size: 25px;
   font-weight: 650;
   line-height: 1.3;
   color: var(--rinf-ink);
@@ -149,7 +194,7 @@
 
 .rinf-issue .rinf-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-columns: minmax(0, 1fr) 340px;
   align-items: start;
   gap: 24px;
 }
@@ -171,7 +216,8 @@
 
 /* ---------- Карточки в основной колонке ---------- */
 
-.rinf-issue .rinf-main > .rinf-card {
+.rinf-issue .rinf-main > .rinf-card,
+.rinf-issue > .rinf-card {
   background: var(--rinf-surface);
   border: 1px solid var(--rinf-line-soft);
   border-radius: var(--rinf-radius);
@@ -182,6 +228,14 @@
 /* Вертикальный ритм основной колонки: карточки и плагин-зоны чередуются,
    поэтому отступ задаём любому непервому ребёнку, а не только card+card. */
 .rinf-issue .rinf-main > * + * {
+  margin-top: 16px;
+}
+
+/* Журнал и «Файлы» вынесены из двухколоночной сетки и идут под ней во всю
+   ширину: читать переписку в колонке шириной с треть экрана — основная
+   претензия к прежней раскладке. */
+.rinf-issue > .rinf-layout + .rinf-card,
+.rinf-issue > .rinf-card + .rinf-card {
   margin-top: 16px;
 }
 
@@ -203,12 +257,22 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  /* Свойства остаются на экране при прокрутке длинного журнала;
-     если колонка выше окна — скроллится внутри себя. */
+}
+
+/* Липкой колонка становится, только если целиком помещается в окно — класс
+   вешает rinf_issue.js после замера. Безусловный sticky с max-height:100vh
+   превращал её в отдельный скроллер и отрезал нижние группы, хотя страница
+   заведомо выше и вмещает всё. */
+html.rinf-props-sticky .rinf-issue .rinf-side {
   position: sticky;
   top: 10px;
-  max-height: calc(100vh - 20px);
-  overflow-y: auto;
+}
+
+/* Обёртка групп несёт класс .attributes ради совместимости с темами, а ядро
+   вешает на него div.issue div.attributes{margin-top:2em} — из-за этих 24px
+   верх колонки свойств не совпадал с верхом карточки описания. */
+.rinf-issue .rinf-side .rinf-groups {
+  margin-top: 0;
 }
 
 .rinf-issue .rinf-group {
@@ -250,14 +314,6 @@
   transform: rotate(90deg);
 }
 
-.rinf-issue .rinf-group__count {
-  margin-left: auto;
-  font-family: var(--rinf-mono);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--rinf-muted);
-}
-
 /* ---------- Поля группы (совместимость с ядровыми .attribute/.label/.value) ---------- */
 
 .rinf-issue .rinf-fields {
@@ -266,7 +322,7 @@
 
 .rinf-issue .rinf-field {
   display: grid;
-  grid-template-columns: 132px 1fr;
+  grid-template-columns: 140px 1fr;
   align-items: baseline;
   gap: 10px;
   padding: 5px 10px;
@@ -412,6 +468,33 @@
   margin: 10px 0;
 }
 
+/* ---------- Широкие таблицы: скролл внутри своего блока ---------- */
+
+/* .rinf-main — grid-элемент с min-width:0, поэтому колонка не раздувается, но
+   таблица плагина шире неё просто рисовалась поверх панели свойств
+   («Пересекающиеся задачи»). Отдаём переполнение самому блоку. */
+.rinf-issue .rinf-plugin-zone {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Таблицы внутри описания и комментариев (реестры пакетов) вылезали за
+   карточку. display:block + width:max-content даёт им собственный
+   горизонтальный скролл, не ломая раскладку колонок таблицы. */
+.rinf-issue .wiki table,
+.rinf-issue .journal table,
+.rinf-issue .journal-details table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.rinf-issue #history {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 /* ---------- Доступность ---------- */
 
 .rinf-issue .rinf-pill:focus-visible,
@@ -420,4 +503,358 @@
 .rinf-issue .rinf-check:focus-visible {
   outline: 2px solid var(--rinf-accent);
   outline-offset: 2px;
+}
+
+/* ---------- Файлы: свёрнутая карточка под журналом ---------- */
+
+/* Заголовок-переключатель <summary> у карточек основной колонки. */
+.rinf-issue .rinf-card__summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--rinf-ink);
+}
+
+.rinf-issue .rinf-card__summary::-webkit-details-marker,
+.rinf-issue .rinf-card__summary::marker {
+  display: none;
+  content: "";
+}
+
+.rinf-issue .rinf-card__summary::before {
+  content: "\25B8";
+  color: var(--rinf-muted);
+  font-size: 10px;
+  transition: transform .15s ease;
+}
+
+.rinf-issue details[open] > .rinf-card__summary::before {
+  transform: rotate(90deg);
+}
+
+.rinf-issue details[open] > .rinf-card__summary {
+  margin-bottom: 10px;
+}
+
+.rinf-issue .rinf-card__count {
+  font-family: var(--rinf-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rinf-muted);
+  background: var(--rinf-surface-2);
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+
+/* Тема master_forms_modern рисует .attachments как отдельную карточку (фон,
+   рамка, паддинг) — внутри нашей карточки это была бы вторая рамка. Гасим
+   специфичностью (3 класса против одного у темы), без !important. */
+.rinf-issue .rinf-card--attachments .attachments {
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+}
+
+/* Ссылка «Редактировать файлы» из ядра всплывала поверх первой строки
+   таблицы (float:right) — ставим её отдельной строкой над списком. */
+.rinf-issue .rinf-card--attachments .attachments > .contextual {
+  float: none;
+  text-align: right;
+  margin: 0 0 6px;
+}
+
+.rinf-issue .rinf-card--attachments table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rinf-issue .rinf-card--attachments td {
+  padding: 4px 0;
+  border-top: 1px solid var(--rinf-line-soft);
+  font-size: 13px;
+  vertical-align: baseline;
+}
+
+.rinf-issue .rinf-card--attachments tr:first-child td {
+  border-top: none;
+}
+
+.rinf-issue .rinf-card--attachments tr:hover td {
+  background: var(--rinf-surface-2);
+}
+
+/* Ядровая таблица вложений — 4 колонки: имя+размер / описание / автор+дата /
+   удаление. Раздувалась колонка описания (у скриншотов она пустая), из-за чего
+   между именем файла и его автором получался «каньон» в пол-экрана. Свободное
+   место отдаём последней колонке: имя, описание и автор читаются одной
+   строкой, а иконки действий выстраиваются по правому краю. */
+.rinf-issue .rinf-card--attachments td:nth-child(1) {
+  white-space: nowrap;
+}
+
+.rinf-issue .rinf-card--attachments td:nth-child(2) {
+  width: 1%;
+  padding-left: 10px;
+  color: var(--rinf-ink-2);
+}
+
+.rinf-issue .rinf-card--attachments td:nth-child(3) {
+  width: 1%;
+  padding-left: 14px;
+  white-space: nowrap;
+}
+
+.rinf-issue .rinf-card--attachments td:nth-child(4) {
+  width: 100%;
+  text-align: right;
+}
+
+.rinf-issue .rinf-card--attachments .size,
+.rinf-issue .rinf-card--attachments span.author {
+  font-size: 12px;
+  color: var(--rinf-muted);
+}
+
+.rinf-issue .rinf-card--attachments .thumbnails {
+  margin-top: 12px;
+}
+
+/* ---------- Ядровый #sidebar: рельс в палитре страницы ---------- */
+
+/* Панель оформлена как вертикальный рельс: строки через хайрлайны вместо
+   набора коробок, микрозаголовки моношрифтом капсом, счётчик — чип с
+   табличными цифрами. Графика берётся из токенов самой формы, чтобы панель
+   читалась её продолжением, а не чужим блоком.
+   Селекторы вынужденно вне .rinf-issue (#sidebar лежит в другой ветке DOM),
+   поэтому ограничены классами body из body_css_classes. */
+body.controller-issues.action-show #sidebar {
+  background: var(--rinf-ground);
+  border-left: 1px solid var(--rinf-line);
+  padding: 0 0 0 22px;
+  transition: width .22s ease, padding .22s ease;
+}
+
+body.controller-issues.action-show #sidebar .rinf-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  /* Полоса под плавающие триггеры плагинов (.sla-drawer-trigger и соседи —
+     position: fixed; right: 0), иначе они ложатся поверх текста. */
+  padding: 16px 44px 28px 0;
+}
+
+body.controller-issues.action-show .rinf-sidebar > #watchers,
+body.controller-issues.action-show .rinf-sidebar > .box,
+body.controller-issues.action-show .rinf-sidebar > .rinf-sidebar__queries {
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--rinf-line-soft);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 15px 0 16px;
+}
+
+body.controller-issues.action-show .rinf-sidebar > *:first-child {
+  border-top: none;
+  padding-top: 2px;
+}
+
+body.controller-issues.action-show #sidebar h3 {
+  margin: 0 0 9px;
+  padding: 0;
+  border: none;
+  font-family: var(--rinf-mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--rinf-muted);
+}
+
+body.controller-issues.action-show #sidebar .rinf-sidebar__queries-body h3 {
+  margin-top: 14px;
+}
+
+body.controller-issues.action-show #sidebar .rinf-sidebar__queries-body h3:first-child {
+  margin-top: 4px;
+}
+
+body.controller-issues.action-show #sidebar ul.queries,
+body.controller-issues.action-show #sidebar ul.queries li {
+  margin: 0;
+  padding: 0;
+}
+
+/* Длинные названия запросов раньше обрезались по правому краю. */
+body.controller-issues.action-show #sidebar ul.queries a {
+  display: block;
+  padding: 4px 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--rinf-accent);
+  overflow-wrap: anywhere;
+}
+
+body.controller-issues.action-show #sidebar ul.queries a:hover {
+  color: var(--rinf-ink);
+  text-decoration: none;
+}
+
+body.controller-issues.action-show #sidebar .contract-status {
+  font-size: 13px;
+  color: var(--rinf-ink);
+}
+
+body.controller-issues.action-show #sidebar .contract-status strong {
+  display: block;
+  margin-bottom: 2px;
+  font-family: var(--rinf-mono);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--rinf-muted);
+}
+
+body.controller-issues.action-show #sidebar #watchers .contextual {
+  margin: 0;
+}
+
+body.controller-issues.action-show #sidebar #watchers .contextual a {
+  font-size: 11px;
+  color: var(--rinf-muted);
+  border: 1px solid var(--rinf-line);
+  border-radius: 5px;
+  padding: 3px 8px;
+}
+
+body.controller-issues.action-show #sidebar #watchers .contextual a:hover {
+  color: var(--rinf-accent);
+  border-color: var(--rinf-accent);
+}
+
+/* Сохранённые запросы (на этой инсталляции их ~40) — свёрнутый блок:
+   самый высокий элемент страницы и единственный, который к самой задаче
+   отношения не имеет. */
+body.controller-issues.action-show .rinf-sidebar__summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--rinf-mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--rinf-ink-2);
+}
+
+body.controller-issues.action-show .rinf-sidebar__summary::-webkit-details-marker,
+body.controller-issues.action-show .rinf-sidebar__summary::marker {
+  display: none;
+  content: "";
+}
+
+body.controller-issues.action-show .rinf-sidebar__summary::before {
+  content: "\25B8";
+  color: var(--rinf-muted);
+  font-size: 10px;
+  transition: transform .15s ease;
+}
+
+body.controller-issues.action-show .rinf-sidebar__queries[open] > .rinf-sidebar__summary::before {
+  transform: rotate(90deg);
+}
+
+body.controller-issues.action-show .rinf-sidebar__count {
+  margin-left: auto;
+  font-family: var(--rinf-mono);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--rinf-muted);
+  background: var(--rinf-surface-2);
+  border-radius: 4px;
+  padding: 3px 6px;
+}
+
+body.controller-issues.action-show .rinf-sidebar__queries-body {
+  margin-top: 4px;
+}
+
+body.controller-issues.action-show .rinf-sidebar__summary:focus-visible {
+  outline: 2px solid var(--rinf-accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Сворачивание правой панели ---------- */
+
+/* Трек схлопывается в ноль, #content (flex:1) забирает освободившуюся ширину.
+   Специфичность (1 id + 2 класса) перебивает шесть ядровых медиазапросов
+   #sidebar{width:...} без !important. */
+html.rinf-sidebar-folded body.controller-issues.action-show #sidebar {
+  width: 0;
+  min-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  border-left: none;
+  overflow: hidden;
+}
+
+/* Ручку создаёт rinf_issue.js; top и right он же и проставляет — она едет
+   вместе с панелью и встаёт над стеком плавающих вкладок плагинов (а на
+   невысоком окне, где сверху места нет, — под ним). */
+#rinf-sidebar-toggle {
+  position: fixed;
+  top: 152px;
+  right: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid var(--rinf-line);
+  border-right: none;
+  border-radius: 7px 0 0 7px;
+  background: var(--rinf-surface);
+  color: var(--rinf-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: -2px 0 10px rgba(29, 38, 53, .07);
+  transition: right .22s ease, top .15s ease, color .15s ease, border-color .15s ease;
+}
+
+#rinf-sidebar-toggle:hover {
+  color: var(--rinf-accent);
+  border-color: var(--rinf-accent);
+}
+
+#rinf-sidebar-toggle:focus-visible {
+  outline: 2px solid var(--rinf-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.controller-issues.action-show #sidebar,
+  #rinf-sidebar-toggle {
+    transition: none;
+  }
 }
